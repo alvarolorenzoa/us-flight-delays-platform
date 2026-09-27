@@ -34,7 +34,7 @@ def _get_with_retries(params: dict, retries: int = 5) -> list[dict]:
     """GET with exponential back-off on timeouts, connection errors, 429 and 5xx."""
     for attempt in range(1, retries + 1):
         try:
-            r = requests.get(config.OPEN_METEO_URL, params=params, headers=config.HTTP_HEADERS, timeout=300)
+            r = requests.get(config.OPEN_METEO_URL, params=params, headers=config.HTTP_HEADERS, timeout=(10, 60))
             if r.status_code == 429 or r.status_code >= 500:
                 raise requests.HTTPError(f"HTTP {r.status_code}", response=r)
             r.raise_for_status()
@@ -44,7 +44,7 @@ def _get_with_retries(params: dict, retries: int = 5) -> list[dict]:
             status = getattr(getattr(exc, "response", None), "status_code", None)
             if status is not None and status < 500 and status != 429:
                 raise  # 4xx other than rate limiting = our bug, do not retry
-            wait = min(30 * 2 ** (attempt - 1), 300)
+            wait = min(15 * 2 ** (attempt - 1), 120)
             log.warning("Open-Meteo attempt %d/%d failed (%s), retrying in %ds", attempt, retries, exc, wait)
             time.sleep(wait)
     raise RuntimeError("Open-Meteo: too many retries")
