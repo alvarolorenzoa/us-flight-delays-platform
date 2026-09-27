@@ -18,7 +18,7 @@ from ingestion import bts, config, lake, weather
 logging.basicConfig(level=logging.INFO, format="%(asctime)s | %(levelname)-7s | %(name)s | %(message)s",
                     datefmt="%H:%M:%S")
 log = logging.getLogger("pipeline")
-logging.getLogger("azure").setLevel(logging.WARNING)
+logging.getLogger("azure").setLevel(logging.WARNING)  # the Azure SDK logs every HTTP request at INFO
 
 
 def run_dbt() -> None:
@@ -46,8 +46,11 @@ def main(argv=None) -> None:
     new_rows = 0
     for y, m in months:                                        # 3. incremental ingestion
         new_rows += bts.ingest_month(y, m)
-        if weather.ingest_month(y, m):
-            time.sleep(20)  # stay well under Open-Meteo's per-minute limit (30 hubs = many "calls")
+        try:
+            if weather.ingest_month(y, m):
+                time.sleep(20)  # stay well under Open-Meteo's per-minute limit
+        except Exception as exc:  # weather is an enrichment: never block the flights pipeline
+            log.warning("Weather %d-%02d skipped (%s); it will be retried on the next run", y, m, exc)
     log.info("New flight rows ingested: %s", f"{new_rows:,}")
 
     lake.upload("bronze")                                      # 4. persist raw data

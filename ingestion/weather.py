@@ -30,26 +30,43 @@ def bronze_path(lake: Path, year: int, month: int) -> Path:
     return lake / "bronze" / "weather" / f"year={year}" / f"month={month:02d}" / "weather.parquet"
 
 
-def fetch_open_meteo(hubs: pd.DataFrame, start: str, end: str, retries: int = 4) -> list[dict]:
-    """One request for all hubs (Open-Meteo accepts comma-separated coordinates)."""
-    params = {
-        "latitude": ",".join(f"{v:.4f}" for v in hubs["latitude"]),
-        "longitude": ",".join(f"{v:.4f}" for v in hubs["longitude"]),
-        "start_date": start, "end_date": end,
-        "hourly": ",".join(HOURLY_VARS),
-        "timezone": "auto", "wind_speed_unit": "kmh",
-    }
+def _get_with_retries(params: dict, retries: int = 5) -> list[dict]:
+    """GET with exponential back-off on timeouts, connection errors, 429 and 5xx."""
     for attempt in range(1, retries + 1):
-        r = requests.get(config.OPEN_METEO_URL, params=params, headers=config.HTTP_HEADERS, timeout=120)
-        if r.status_code == 429:  # rate limited: back off and retry
-            wait = 30 * attempt
-            log.warning("Open-Meteo rate limit, waiting %ds", wait)
+        try:
+            r = requests.get(config.OPEN_METEO_URL, params=params, headers=config.HTTP_HEADERS, timeout=300)
+            if r.status_code == 429 or r.status_code >= 500:
+                raise requests.HTTPError(f"HTTP {r.status_code}", response=r)
+            r.raise_for_status()
+            data = r.json()
+            return data if isinstance(data, list) else [data]
+        except (requests.Timeout, requests.ConnectionError, requests.HTTPError) as exc:
+            status = getattr(getattr(exc, "response", None), "status_code", None)
+            if status is not None and status < 500 and status != 429:
+                raise  # 4xx other than rate limiting = our bug, do not retry
+            wait = min(30 * 2 ** (attempt - 1), 300)
+            log.warning("Open-Meteo attempt %d/%d failed (%s), retrying in %ds", attempt, retries, exc, wait)
             time.sleep(wait)
-            continue
-        r.raise_for_status()
-        data = r.json()
-        return data if isinstance(data, list) else [data]
     raise RuntimeError("Open-Meteo: too many retries")
+
+
+def fetch_open_meteo(hubs: pd.DataFrame, start: str, end: str, batch_size: int = 10) -> list[dict]:
+    """Hourly weather for all hubs, requested in small batches of coordinates (large multi-location
+    requests are slow and can time out). Returns one response per hub, in the same order."""
+    out: list[dict] = []
+    for i in range(0, len(hubs), batch_size):
+        batch = hubs.iloc[i:i + batch_size]
+        params = {
+            "latitude": ",".join(f"{v:.4f}" for v in batch["latitude"]),
+            "longitude": ",".join(f"{v:.4f}" for v in batch["longitude"]),
+            "start_date": start, "end_date": end,
+            "hourly": ",".join(HOURLY_VARS),
+            "timezone": "auto", "wind_speed_unit": "kmh",
+        }
+        out.extend(_get_with_retries(params))
+        if i + batch_size < len(hubs):
+            time.sleep(5)  # be gentle with the free API
+    return out
 
 
 def to_frame(responses: list[dict], hubs: pd.DataFrame) -> pd.DataFrame:

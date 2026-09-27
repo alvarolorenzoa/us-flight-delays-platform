@@ -86,3 +86,39 @@ def test_latest_published_month_walks_back(monkeypatch):
     published = {(2025, 6)}
     monkeypatch.setattr(bts, "is_published", lambda y, m, s=None: (y, m) in published)
     assert bts.latest_published_month(today=dt.date(2025, 9, 15)) == (2025, 6)
+
+
+def test_open_meteo_is_requested_in_batches(monkeypatch):
+    hubs = weather.load_hubs()  # 30 hubs
+    calls = []
+
+    def fake_get(params, retries=5):
+        n = len(params["latitude"].split(","))
+        calls.append(n)
+        return [{"hourly": {}}] * n
+
+    monkeypatch.setattr(weather, "_get_with_retries", fake_get)
+    monkeypatch.setattr(weather.time, "sleep", lambda s: None)
+    out = weather.fetch_open_meteo(hubs, "2025-01-01", "2025-01-31")
+    assert calls == [10, 10, 10] and len(out) == 30
+
+
+def test_open_meteo_retries_on_timeout(monkeypatch):
+    import requests
+    attempts = {"n": 0}
+
+    class Ok:
+        status_code = 200
+        def raise_for_status(self): pass
+        def json(self): return {"hourly": {}}
+
+    def flaky_get(*a, **k):
+        attempts["n"] += 1
+        if attempts["n"] < 3:
+            raise requests.Timeout("slow")
+        return Ok()
+
+    monkeypatch.setattr(weather.requests, "get", flaky_get)
+    monkeypatch.setattr(weather.time, "sleep", lambda s: None)
+    assert weather._get_with_retries({}) == [{"hourly": {}}]
+    assert attempts["n"] == 3
