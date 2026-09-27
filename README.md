@@ -10,7 +10,7 @@ Transportation) and **hourly weather at the 30 busiest airports**, models them w
 bronze → silver → gold **Azure Data Lake**, refreshes itself **every month with GitHub Actions**, and
 serves a public **Streamlit dashboard**.
 
-**🔗 Live dashboard:** `https://<your-app>.streamlit.app` · **📚 dbt docs & lineage:** `https://alvarolorenzoa.github.io/us-flight-delays-platform`
+**🔗 Live dashboard:** https://us-flight-delays-alvaro.streamlit.app · **📚 dbt docs & lineage:** https://alvarolorenzoa.github.io/us-flight-delays-platform
 
 **Business questions**
 1. How punctual is the US network, and how does it evolve month to month?
