@@ -130,6 +130,7 @@ with t_air:
                  labels={"on_time_pct": "On-time %", "carrier_name": "", "carrier_type": "Type"},
                  color_discrete_sequence=[NAVY, ORANGE, "#5B8DB8", GREY, GREEN])
     fig.update_xaxes(range=[max(0, m["on_time_pct"].min() - 10), 100])
+    fig.update_yaxes(categoryorder="total ascending")  # rank by punctuality, not by colour group
     st.plotly_chart(style(fig, 460), use_container_width=True)
     st.dataframe(m.sort_values("on_time_rank")[["on_time_rank", "carrier_name", "carrier_type", "flights",
                  "on_time_pct", "avg_arr_delay_min", "cancellation_pct"]],

@@ -79,9 +79,15 @@ Key modelling decisions
 
 ## Key findings
 
-_Filled in from the production data after the first run - see the dashboard for the latest month._
+_12 months of production data: **7,043,858 domestic flights**, August 2025 → July 2026._
 
----
+| # | Finding | So what? |
+|---|---|---|
+| 1 | **Weather at the origin hub nearly doubles the chance of a late departure**: 22.2% of departures leave 15+ min late in dry & calm conditions vs **40.6% in heavy rain** and **40.7% in snow** (+18.5 pp). Snow also pushes cancellations to **18.6%**. | Weather-aware staffing and proactive rebooking pay off at the hubs most exposed to it. |
+| 2 | **The impact is very uneven between hubs**: heavy rain adds **+37 pp** of delayed departures at Denver (DEN) but almost nothing at Las Vegas (LAS); snow is hardest on Dallas/Fort Worth (DFW, +73 pp), a hub that rarely sees it. | Airports that rarely face an event are the least prepared for it: de-icing / ground-ops capacity matters more than the weather itself. |
+| 3 | **Punctuality swings strongly across the year**, from ~84% on-time (Sep 2025) down to **71.7% in July 2026**, the worst month of the period (+3.9 min average arrival delay vs June). | Summer peaks, not winter, are the main operational stress test. |
+| 4 | **Late-arriving aircraft and carrier causes explain most delay minutes**; the "weather" cause code is only a single-digit share, although weather also hides inside National Air System delays. | Delays propagate through aircraft rotations: buffer time in the schedule is the main lever. |
+| 5 | **Airline gap of almost 20 pp** (July 2026): Envoy Air 81.2% on time and Alaska Airlines 76.8% (best network carrier) vs American 66.9% and JetBlue 62.2%; American and Frontier average **23-24 min** arrival delay. | Carrier choice matters as much as the weather for a passenger's chance of arriving on time. |
 
 ## Run it locally
 
