@@ -1,0 +1,38 @@
+version: 2
+
+models:
+  - name: fct_flights
+    description: One row per scheduled flight with outcome, delay causes and origin weather.
+    columns:
+      - name: flight_id
+        data_tests: [unique, not_null]
+      - name: carrier_code
+        data_tests:
+          - relationships: {arguments: {to: ref('dim_carrier'), field: carrier_code}}
+      - name: origin_code
+        data_tests:
+          - relationships: {arguments: {to: ref('dim_airport'), field: airport_code}}
+      - name: dest_code
+        data_tests:
+          - relationships: {arguments: {to: ref('dim_airport'), field: airport_code}}
+      - name: date_key
+        data_tests:
+          - relationships: {arguments: {to: ref('dim_date'), field: date_key}}
+      - name: cancellation_reason
+        data_tests:
+          - accepted_values: {arguments: {values: ['Carrier', 'Weather', 'National Air System', 'Security']}}
+      - name: weather_condition
+        data_tests:
+          - accepted_values: {arguments: {values: ['Snow', 'Heavy rain', 'Light rain', 'Strong wind', 'Dry & calm']}}
+  - name: dim_carrier
+    columns:
+      - name: carrier_code
+        data_tests: [unique, not_null]
+  - name: dim_airport
+    columns:
+      - name: airport_code
+        data_tests: [unique, not_null]
+  - name: dim_date
+    columns:
+      - name: date_key
+        data_tests: [unique, not_null]

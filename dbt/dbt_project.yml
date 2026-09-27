@@ -1,0 +1,35 @@
+name: flights
+version: "1.0.0"
+config-version: 2
+profile: flights
+
+model-paths: ["models"]
+seed-paths: ["seeds"]
+test-paths: ["tests"]
+macro-paths: ["macros"]
+target-path: "target"
+clean-targets: ["target", "dbt_packages"]
+
+models:
+  flights:
+    staging:
+      +materialized: view
+      +schema: silver
+    intermediate:
+      +materialized: table
+      +schema: silver
+    marts:
+      +schema: gold
+      core:
+        +materialized: table
+      analytics:
+        # written to the lake as Parquet (gold layer) -> read by the dashboard / Power BI
+        +materialized: external
+
+seeds:
+  flights:
+    +schema: reference
+    hub_airports:
+      +column_types:
+        latitude: double
+        longitude: double

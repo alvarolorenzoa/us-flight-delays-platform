@@ -1,0 +1,34 @@
+version: 2
+
+models:
+  - name: stg_flights
+    description: Typed and de-duplicated flights with a surrogate key and the scheduled departure timestamp.
+    columns:
+      - name: flight_id
+        description: md5 of the natural key (date, carrier, flight number, route, scheduled time).
+        data_tests: [unique, not_null]
+      - name: flight_date
+        data_tests: [not_null]
+      - name: origin
+        data_tests: [not_null]
+      - name: dest
+        data_tests: [not_null]
+      - name: scheduled_dep_hour
+        data_tests:
+          - accepted_range: {arguments: {min_value: 0, max_value: 23}}
+      - name: cancellation_code
+        description: A = carrier, B = weather, C = National Air System, D = security.
+        data_tests:
+          - accepted_values: {arguments: {values: ['A', 'B', 'C', 'D']}}
+      - name: distance_miles
+        data_tests:
+          - accepted_range: {arguments: {min_value: 0, max_value: 6000}}
+
+  - name: stg_weather
+    description: Hourly weather at each hub airport (local time).
+    columns:
+      - name: airport_code
+        data_tests: [not_null]
+      - name: precipitation_mm
+        data_tests:
+          - accepted_range: {arguments: {min_value: 0, max_value: 200}}

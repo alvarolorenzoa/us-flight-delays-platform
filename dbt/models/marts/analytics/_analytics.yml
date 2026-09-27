@@ -1,0 +1,34 @@
+version: 2
+
+models:
+  - name: mart_kpis_monthly
+    description: Network KPIs per month (on-time %, average delay, cancellations).
+    columns:
+      - name: year_month
+        data_tests: [unique, not_null]
+      - name: on_time_pct
+        data_tests:
+          - accepted_range: {arguments: {min_value: 0, max_value: 100}}
+  - name: mart_carrier_monthly
+    description: Airline punctuality ranking per month.
+    columns:
+      - name: on_time_pct
+        data_tests:
+          - accepted_range: {arguments: {min_value: 0, max_value: 100}}
+  - name: mart_airport_daily
+    description: Daily departure performance per origin airport.
+  - name: mart_route_monthly
+    description: Monthly punctuality per route (>= 30 flights).
+  - name: mart_delay_causes_monthly
+    description: Delay hours by cause and month, with share of total.
+    columns:
+      - name: cause
+        data_tests:
+          - accepted_values: {arguments: {values: ['Carrier', 'Weather', 'National Air System', 'Security', 'Late aircraft']}}
+  - name: mart_weather_impact
+    description: Departure delay rate by weather condition at each hub, and uplift vs. dry & calm.
+  - name: mart_hourly_profile
+    description: Punctuality by scheduled departure hour.
+    columns:
+      - name: scheduled_dep_hour
+        data_tests: [unique]

@@ -1,0 +1,17 @@
+version: 2
+
+sources:
+  - name: bronze
+    description: Raw monthly extracts in the lake (Parquet, partitioned by year/month).
+    meta:
+      external_location: "read_parquet('{{ env_var('LAKE_PATH', '../data/lake') }}/bronze/{name}/*/*/*.parquet', hive_partitioning = true, union_by_name = true)"
+    tables:
+      - name: flights
+        description: BTS Reporting Carrier On-Time Performance, one row per scheduled domestic flight.
+        columns:
+          - name: flight_date
+            data_tests: [not_null]
+          - name: carrier_code
+            data_tests: [not_null]
+      - name: weather
+        description: Open-Meteo hourly historical weather for the hub airports (local time).

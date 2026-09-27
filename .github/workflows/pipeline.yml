@@ -1,0 +1,57 @@
+name: Data pipeline
+
+on:
+  schedule:
+    - cron: "0 6 20 * *"      # monthly, after BTS publishes a new month
+  workflow_dispatch:
+    inputs:
+      months:
+        description: "Months of history to keep"
+        default: "12"
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pipeline
+  cancel-in-progress: false
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    env:
+      AZURE_STORAGE_CONNECTION_STRING: ${{ secrets.AZURE_STORAGE_CONNECTION_STRING }}
+      LAKE_PATH: ${{ github.workspace }}/data/lake
+      DUCKDB_PATH: ${{ github.workspace }}/data/warehouse.duckdb
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+      - run: pip install -r requirements.txt
+
+      - name: Ingest -> dbt build -> publish to Azure Data Lake
+        run: python -m ingestion.pipeline --months "${{ github.event.inputs.months || '12' }}"
+
+      - name: Generate dbt documentation (lineage graph)
+        run: |
+          dbt docs generate --project-dir dbt --profiles-dir dbt --static
+          mkdir -p site && cp dbt/target/static_index.html site/index.html
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: site
+
+  docs:
+    needs: run
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deploy.outputs.page_url }}
+    steps:
+      - id: deploy
+        uses: actions/deploy-pages@v4

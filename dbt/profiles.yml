@@ -1,0 +1,8 @@
+flights:
+  target: dev
+  outputs:
+    dev:
+      type: duckdb
+      path: "{{ env_var('DUCKDB_PATH', '../data/warehouse.duckdb') }}"
+      threads: 4
+      external_root: "{{ env_var('LAKE_PATH', '../data/lake') }}/gold"
